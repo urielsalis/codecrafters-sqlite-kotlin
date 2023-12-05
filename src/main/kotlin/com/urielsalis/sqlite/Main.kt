@@ -13,6 +13,27 @@ fun main(args: Array<String>) {
     when (command) {
         ".dbinfo" -> {
             println("database page size: " + db.header.pageSize)
+            println("write format: " + db.header.fileFormatWriteVersion)
+            println("read format: " + db.header.fileFormatReadVersion)
+            println("reserved bytes: " + db.header.bytesReservedAtEndOfEachPage)
+            println("file change counter: " + db.header.fileChangeCounter)
+            println("database page count: " + db.header.databaseSizeInPages)
+            println("freelist page count: " + db.header.totalFreelistPages)
+            println("schema cookie: " + db.header.schemaCookie)
+            println("schema format: " + db.header.schemaFormatNumber)
+            println("default cache size: " + db.header.defaultPageCacheSize)
+            println("autovacuum top root: " + db.header.largestBTreePageNumber)
+            println("incremental vacuum: " + db.header.incrementalVacuumMode)
+            println("text encoding: " + db.header.databaseTextEncoding)
+            println("user version: " + db.header.userVersion)
+            println("application id: " + db.header.applicationID)
+            println("software version: " + db.header.sqliteVersionNumber)
+            println("number of tables: " + db.schema.tables.size)
+            println("number of indexes: " + db.schema.indexes.size)
+            println("number of triggers: " + db.schema.triggers.size)
+            println("number of views: " + db.schema.views.size)
+            println("schema size: " + db.schema.size)
+            println("data version " + db.header.versionValidFor)
         }
 
         else -> println("Missing or invalid command passed: $command")

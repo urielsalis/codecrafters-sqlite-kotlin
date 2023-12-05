@@ -1,6 +1,8 @@
 package com.urielsalis.sqlite.domain
 
-data class SQLiteDB(val header: SQLiteHeader)
+import java.nio.charset.Charset
+
+data class SQLiteDB(val header: SQLiteHeader, val schema: SQLiteSchema, val pages: List<SQLitePage>)
 
 data class SQLiteHeader(
     // 2 bytes
@@ -41,13 +43,14 @@ data class SQLiteHeader(
                     else -> throw IllegalArgumentException("Invalid FileFormatVersion byte: $byte")
                 }
         }
+
+        override fun toString(): String = value.toString()
     }
 
-    @Suppress("MagicNumber")
-    enum class TextEncoding(val value: Byte) {
-        UTF8(1),
-        UTF16LE(2),
-        UTF16BE(3),
+    enum class TextEncoding(val value: Byte, val charset: Charset) {
+        UTF8(1, Charsets.UTF_8),
+        UTF16LE(2, Charsets.UTF_16LE),
+        UTF16BE(3, Charsets.UTF_16BE),
         ;
 
         companion object {
@@ -60,21 +63,21 @@ data class SQLiteHeader(
                     else -> throw IllegalArgumentException("Invalid TextEncoding byte: $byte")
                 }
         }
+
+        override fun toString(): String = "$value (${name.lowercase()})"
     }
 
-    @Suppress("MagicNumber")
     @JvmInline
     value class SchemaFormat(val value: Byte) {
         companion object {
-            private const val MIN_VERSION = 0
-            private const val MAX_VERSION = 4
-
             fun fromByte(value: Byte): SchemaFormat {
-                if (value in MIN_VERSION..MAX_VERSION) {
+                if (value in 0..4) {
                     return SchemaFormat((value))
                 }
                 throw IllegalArgumentException("Invalid SchemaFormat byte: $value")
             }
         }
+
+        override fun toString(): String = value.toString()
     }
 }
