@@ -35,6 +35,9 @@ fun main(args: Array<String>) {
             println("schema size: " + db.schema.size)
             println("data version " + db.header.versionValidFor)
         }
+        ".tables" -> {
+            println(db.schema.tables.reversed().joinToString(" ") { it.tableName })
+        }
 
         else -> println("Missing or invalid command passed: $command")
     }
