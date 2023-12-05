@@ -10,6 +10,7 @@ import com.urielsalis.sqlite.domain.SQLitePageHeader
 import com.urielsalis.sqlite.domain.SQLiteTable
 import com.urielsalis.sqlite.domain.SQLiteValue
 import com.urielsalis.sqlite.domain.SelectSQLQuery
+import com.urielsalis.sqlite.domain.StringSQLiteValue
 import java.util.function.Consumer
 
 fun executeQuery(
@@ -63,7 +64,7 @@ fun matchesConditions(
     conditions: Map<String, String>,
 ): Boolean {
     conditions.forEach { (key, value) ->
-        if (map[key]?.equals(value) == false) {
+        if ((map[key] as? StringSQLiteValue?)?.value?.equals(value) == false) {
             return false
         }
     }

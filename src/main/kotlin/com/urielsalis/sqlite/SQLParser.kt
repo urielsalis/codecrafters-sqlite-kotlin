@@ -13,7 +13,7 @@ fun parseQuery(command: String): SQLQuery {
             val conditions =
                 command.substring(whereIndex + 5).trim().split("AND").associate {
                     val split = it.trim().split("=")
-                    split[0].trim() to split[1].trim()
+                    split[0].trim() to split[1].replace("'", "").trim()
                 }
             table to conditions
         } else {
