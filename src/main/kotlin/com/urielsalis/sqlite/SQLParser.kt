@@ -22,7 +22,7 @@ fun parseQuery(command: String): SQLQuery {
     if (command.startsWith("SELECT COUNT", true)) {
         return CountSQLQuery(table, conditions)
     } else {
-        val columns = command.substring(6, fromIndex).trim().split(",")
+        val columns = command.substring(6, fromIndex).split(",").map { it.trim() }
         return SelectSQLQuery(table, conditions, columns)
     }
 }
