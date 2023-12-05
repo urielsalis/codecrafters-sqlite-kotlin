@@ -38,7 +38,12 @@ fun main(args: Array<String>) {
         ".tables" -> {
             println(db.schema.tables.reversed().joinToString(" ") { it.tableName })
         }
-
-        else -> println("Missing or invalid command passed: $command")
+        else -> {
+            val query = parseQuery(command)
+            val results = executeQuery(db, query)
+            results.values.forEach {
+                println(it.joinToString("|"))
+            }
+        }
     }
 }

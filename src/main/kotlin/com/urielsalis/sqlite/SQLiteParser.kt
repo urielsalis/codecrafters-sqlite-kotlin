@@ -79,6 +79,7 @@ private fun parseSchema(
                             tblName.value,
                             rootPage.getNumber().toInt(),
                             sql.value,
+                            parseColumnNames(sql.value),
                         ),
                     )
 
@@ -130,14 +131,14 @@ fun parseRecord(
     when (cell) {
         is SQLitePageHeader.InteriorIndexCell -> TODO("Follow pages")
         is SQLitePageHeader.InteriorTableCell -> TODO("Follow pages")
-        is SQLitePageHeader.LeafIndexCell -> parseRecordContent(textEncoding, cell.payload)
-        is SQLitePageHeader.LeafTableCell -> parseRecordContent(textEncoding, cell.payload)
+        is SQLitePageHeader.LeafIndexCell -> SQLiteRecord(-1L, parseRecordContent(textEncoding, cell.payload))
+        is SQLitePageHeader.LeafTableCell -> SQLiteRecord(cell.rowId, parseRecordContent(textEncoding, cell.payload))
     }
 
 private fun parseRecordContent(
     textEncoding: SQLiteHeader.TextEncoding,
     payload: ByteArray,
-): SQLiteRecord {
+): MutableList<MutableList<SQLiteValue>> {
     val buffer = ByteBuffer.wrap(payload).order(ByteOrder.BIG_ENDIAN)
     val headerSize = buffer.getVarInt()
     val columns = parseRecordColumns(buffer, headerSize)
@@ -145,7 +146,7 @@ private fun parseRecordContent(
     while (buffer.hasRemaining()) {
         rows.add(parseRecordColumnContent(columns, buffer, textEncoding))
     }
-    return SQLiteRecord(rows)
+    return rows
 }
 
 private fun parseRecordColumnContent(

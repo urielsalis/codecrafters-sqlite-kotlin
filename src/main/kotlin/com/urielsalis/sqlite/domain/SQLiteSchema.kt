@@ -14,6 +14,7 @@ data class SQLiteTable(
     val tableName: String,
     val rootPage: Int,
     val sql: String,
+    val columns: List<String>,
 )
 
 // TODO parse index column

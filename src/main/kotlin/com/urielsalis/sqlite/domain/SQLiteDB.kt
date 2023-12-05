@@ -2,7 +2,13 @@ package com.urielsalis.sqlite.domain
 
 import java.nio.charset.Charset
 
-data class SQLiteDB(val header: SQLiteHeader, val schema: SQLiteSchema, val pages: List<SQLitePage>)
+data class SQLiteDB(val header: SQLiteHeader, val schema: SQLiteSchema, val pages: List<SQLitePage>) {
+    fun getPage(rootPage: Int): SQLitePage {
+        require(rootPage > 1) { "First page is the schema" }
+        // NOTE: page numbers are 1-indexed, and we don't save the first page with the schema
+        return pages[rootPage - 2]
+    }
+}
 
 data class SQLiteHeader(
     // 2 bytes
