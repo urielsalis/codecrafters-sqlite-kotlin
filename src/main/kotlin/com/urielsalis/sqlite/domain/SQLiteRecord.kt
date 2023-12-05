@@ -32,12 +32,6 @@ data class ShortSQLiteValue(val value: Short) : NumberSQLiteValue {
 
 @Suppress("MagicNumber")
 data class ThreeByteSQLiteValue(val value: Int) : NumberSQLiteValue {
-    constructor(byteArray: ByteArray) : this(
-        byteArray[0].toInt() shl 16
-            or (byteArray[1].toInt() shl 8)
-            or byteArray[2].toInt(),
-    )
-
     override fun size(): Int = 3
 
     override fun getNumber(): Number = value
@@ -55,14 +49,6 @@ data class IntSQLiteValue(val value: Int) : NumberSQLiteValue {
 
 @Suppress("MagicNumber")
 data class FiveByteSQLiteValue(val value: Long) : NumberSQLiteValue {
-    constructor(byteArray: ByteArray) : this(
-        byteArray[0].toLong() shl 32
-            or (byteArray[1].toLong() shl 24)
-            or (byteArray[2].toLong() shl 16)
-            or (byteArray[3].toLong() shl 8)
-            or byteArray[4].toLong(),
-    )
-
     override fun size(): Int = 5
 
     override fun getNumber(): Number = value

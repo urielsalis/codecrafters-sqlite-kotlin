@@ -24,3 +24,12 @@ fun ByteBuffer.getNBytes(n: Int): ByteArray {
     get(result)
     return result
 }
+
+fun ByteBuffer.getNByteNumber(n: Int): Long {
+    require(n in 1..8)
+    var result = 0L
+    for (i in 0 until n) {
+        result = (result shl 8) + (get().toInt() and 0xff)
+    }
+    return result
+}

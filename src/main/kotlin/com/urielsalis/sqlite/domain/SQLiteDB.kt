@@ -1,12 +1,18 @@
 package com.urielsalis.sqlite.domain
 
+import com.urielsalis.sqlite.parsePage
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.channels.FileChannel
 import java.nio.charset.Charset
 
-data class SQLiteDB(val header: SQLiteHeader, val schema: SQLiteSchema, val pages: List<SQLitePage>) {
+data class SQLiteDB(val header: SQLiteHeader, val schema: SQLiteSchema, val channel: FileChannel) {
     fun getPage(rootPage: Int): SQLitePage {
         require(rootPage > 1) { "First page is the schema" }
-        // NOTE: page numbers are 1-indexed, and we don't save the first page with the schema
-        return pages[rootPage - 2]
+        require(rootPage <= header.databaseSizeInPages) { "Invalid root page: $rootPage" }
+        val buffer = ByteBuffer.allocate(header.pageSize)
+        channel.position((rootPage - 1) * header.pageSize.toLong()).read(buffer)
+        return parsePage(buffer.rewind().order(ByteOrder.BIG_ENDIAN))
     }
 }
 

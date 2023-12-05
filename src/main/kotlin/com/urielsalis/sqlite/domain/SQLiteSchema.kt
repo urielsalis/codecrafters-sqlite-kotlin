@@ -8,7 +8,6 @@ class SQLiteSchema(
     val views: List<SQLiteView>,
 )
 
-// TODO parse columns
 data class SQLiteTable(
     val internalName: String,
     val tableName: String,
@@ -17,12 +16,12 @@ data class SQLiteTable(
     val columns: List<String>,
 )
 
-// TODO parse index column
 data class SQLiteIndex(
-    val internalName: String,
+    val indexName: String,
     val tableName: String,
     val rootPage: Int,
     val sql: String,
+    val indexedColumn: String,
 )
 
 data class SQLiteTrigger(

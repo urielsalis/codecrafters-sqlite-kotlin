@@ -28,8 +28,16 @@ fun parseQuery(command: String): SQLQuery {
 }
 
 fun parseColumnNames(value: String): List<String> {
-    val clean = value.replace("\n", "").replace("\r", "").replace("\t", "").trim()
+    val clean = value.cleanSqlQuery()
     require(clean.startsWith("CREATE TABLE", true))
-    val columns = value.substringAfter("(").substringBeforeLast(")").split(",")
+    val columns = clean.substringAfter("(").substringBeforeLast(")").split(",")
     return columns.map { it.trim().substringBefore(" ") }
 }
+
+fun parseIndex(value: String): String {
+    val clean = value.cleanSqlQuery()
+    require(clean.startsWith("CREATE INDEX", true))
+    return clean.substringAfter("(").substringBeforeLast(")")
+}
+
+private fun String.cleanSqlQuery() = replace("\n", "").replace("\r", "").replace("\t", "").trim()

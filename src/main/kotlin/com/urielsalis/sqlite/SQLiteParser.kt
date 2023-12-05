@@ -37,14 +37,8 @@ fun parseDb(databaseFilePath: String): SQLiteDB {
     file.channel.position(0).read(schemaBuffer)
     val schema =
         parseSchema(header.databaseTextEncoding, schemaBuffer.rewind().order(ByteOrder.BIG_ENDIAN))
-    val pages = mutableListOf<SQLitePage>()
-    for (i in 1 until header.databaseSizeInPages) {
-        val buffer = ByteBuffer.allocate(header.pageSize)
-        file.channel.position(i * header.pageSize.toLong()).read(buffer)
-        pages.add(parsePage(buffer.rewind().order(ByteOrder.BIG_ENDIAN)))
-    }
 
-    return SQLiteDB(header, schema, pages)
+    return SQLiteDB(header, schema, file.channel)
 }
 
 @Suppress("LongMethod")
@@ -97,6 +91,7 @@ private fun parseSchema(
                             tblName.value,
                             rootPage.getNumber().toInt(),
                             sql.value,
+                            parseIndex(sql.value),
                         ),
                     )
 
@@ -166,9 +161,9 @@ private fun parseRecordColumnContent(
                 is NullSQLiteValue -> NullSQLiteValue
                 is ByteSQLiteValue -> ByteSQLiteValue(buffer.get())
                 is ShortSQLiteValue -> ShortSQLiteValue(buffer.getShort())
-                is ThreeByteSQLiteValue -> ThreeByteSQLiteValue(buffer.getNBytes(3))
+                is ThreeByteSQLiteValue -> ThreeByteSQLiteValue(buffer.getNByteNumber(3).toInt())
                 is IntSQLiteValue -> IntSQLiteValue(buffer.getInt())
-                is FiveByteSQLiteValue -> FiveByteSQLiteValue(buffer.getNBytes(5))
+                is FiveByteSQLiteValue -> FiveByteSQLiteValue(buffer.getNByteNumber(6))
                 is LongSQLiteValue -> LongSQLiteValue(buffer.getLong())
                 is DoubleSQLiteValue -> DoubleSQLiteValue(buffer.getDouble())
                 is LiteralSQLiteValue -> it.copy()
@@ -220,7 +215,7 @@ private fun parseRecordColumns(
     return columns
 }
 
-private fun parsePage(buffer: ByteBuffer): SQLitePage {
+fun parsePage(buffer: ByteBuffer): SQLitePage {
     try {
         val header = parsePageHeader(buffer)
         val cellOffsets = mutableListOf<Short>()
