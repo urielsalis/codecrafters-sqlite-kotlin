@@ -2,6 +2,7 @@ package com.urielsalis.sqlite
 
 import com.urielsalis.sqlite.domain.CountSQLQuery
 import com.urielsalis.sqlite.domain.SQLQuery
+import com.urielsalis.sqlite.domain.SelectSQLQuery
 
 fun parseQuery(command: String): SQLQuery {
     val fromIndex = command.indexOf("FROM", 0, true)
@@ -21,7 +22,8 @@ fun parseQuery(command: String): SQLQuery {
     if (command.startsWith("SELECT COUNT", true)) {
         return CountSQLQuery(table, conditions)
     } else {
-        TODO()
+        val columns = command.substring(6, fromIndex).trim().split(",")
+        return SelectSQLQuery(table, conditions, columns)
     }
 }
 

@@ -41,7 +41,7 @@ fun main(args: Array<String>) {
         else -> {
             val query = parseQuery(command)
             val results = executeQuery(db, query)
-            results.values.forEach {
+            results.forEach {
                 println(it.joinToString("|"))
             }
         }
