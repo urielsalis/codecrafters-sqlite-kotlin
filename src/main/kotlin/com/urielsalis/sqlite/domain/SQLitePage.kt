@@ -19,6 +19,7 @@ data class SQLitePageHeader(
         fun hasRightMostPointer() = false
 
         fun parseCell(buffer: ByteBuffer): T = error("Invalid PageType: $this")
+
         companion object {
             fun fromByte(value: Byte) =
                 when (value) {
@@ -33,13 +34,30 @@ data class SQLitePageHeader(
 
     sealed class Cell
 
-    data class InteriorIndexCell(val leftChildPage: Int, val payload: ByteArray) : Cell()
+    interface CellWithPageReference {
+        val leftChildPage: Int
+    }
 
-    data class InteriorTableCell(val leftChildPage: Int, val rowId: Long) : Cell()
+    interface CellWithPayload {
+        val payload: ByteArray
+    }
 
-    data class LeafIndexCell(val payload: ByteArray) : Cell()
+    interface CellWithRowId {
+        val rowId: Long
+    }
 
-    data class LeafTableCell(val rowId: Long, val payload: ByteArray) : Cell()
+    data class InteriorIndexCell(override val leftChildPage: Int, override val payload: ByteArray) :
+        Cell(), CellWithPageReference, CellWithPayload
+
+    data class InteriorTableCell(override val leftChildPage: Int, override val rowId: Long) :
+        Cell(), CellWithPageReference, CellWithRowId
+
+    data class LeafIndexCell(override val payload: ByteArray) : Cell(), CellWithPayload
+
+    data class LeafTableCell(override val rowId: Long, override val payload: ByteArray) :
+        Cell(),
+        CellWithPayload,
+        CellWithRowId
 
     data object InteriorIndexPageType : PageType<InteriorIndexCell> {
         override fun hasRightMostPointer() = true
@@ -51,6 +69,7 @@ data class SQLitePageHeader(
             return InteriorIndexCell(leftChildPage, payload)
         }
     }
+
     data object InteriorTablePageType : PageType<InteriorTableCell> {
         override fun hasRightMostPointer() = true
 
@@ -60,6 +79,7 @@ data class SQLitePageHeader(
             return InteriorTableCell(leftChildPage, rowId)
         }
     }
+
     data object LeafIndexPageType : PageType<LeafIndexCell> {
         override fun parseCell(buffer: ByteBuffer): LeafIndexCell {
             val payloadSize = buffer.getVarInt()
@@ -67,6 +87,7 @@ data class SQLitePageHeader(
             return LeafIndexCell(payload)
         }
     }
+
     data object LeafTablePageType : PageType<LeafTableCell> {
         override fun parseCell(buffer: ByteBuffer): LeafTableCell {
             val payloadSize = buffer.getVarInt()
@@ -75,4 +96,6 @@ data class SQLitePageHeader(
             return LeafTableCell(rowId, payload)
         }
     }
+
+    data object InvalidPageType : PageType<Nothing>
 }

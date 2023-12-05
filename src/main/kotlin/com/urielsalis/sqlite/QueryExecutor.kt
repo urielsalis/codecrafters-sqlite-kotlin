@@ -63,10 +63,12 @@ fun matchesConditions(
     map: Map<String, SQLiteValue>,
     conditions: Map<String, String>,
 ): Boolean {
-    conditions.forEach { (key, value) ->
-        if ((map[key] as? StringSQLiteValue?)?.value?.equals(value) == false) {
-            return false
+    conditions.forEach { (key, expected) ->
+        val value = map[key] ?: return@matchesConditions false
+        if (value !is StringSQLiteValue) {
+            return@matchesConditions false
         }
+        return@matchesConditions value.value == expected
     }
     return true
 }
@@ -77,20 +79,23 @@ private fun MutableList<SQLitePageHeader.Cell>.forEachCell(
     func: Consumer<Map<String, SQLiteValue>>,
 ) {
     forEach { cell ->
-        val record = parseRecord(db.header.databaseTextEncoding, cell)
-        record.values.forEach { row ->
-            val map = mutableMapOf<String, SQLiteValue>()
-            table.columns.forEachIndexed { index, column ->
-                map[column] = row[index]
-            }
-            if (map["id"] == null || map["id"] is NullSQLiteValue) {
-                if (cell is SQLitePageHeader.LeafTableCell) {
-                    map["id"] = LongSQLiteValue(cell.rowId)
-                } else if (cell is SQLitePageHeader.InteriorTableCell) {
-                    map["id"] = LongSQLiteValue(cell.rowId)
+        if (cell is SQLitePageHeader.CellWithPayload) {
+            parseRecord(db.header.databaseTextEncoding, cell).values.forEach { row ->
+                val map = mutableMapOf<String, SQLiteValue>()
+                table.columns.forEachIndexed { index, column ->
+                    map[column] = row[index]
                 }
+                if (map["id"] == null || map["id"] is NullSQLiteValue) {
+                    if (cell is SQLitePageHeader.CellWithRowId) {
+                        map["id"] = LongSQLiteValue(cell.rowId)
+                    }
+                }
+                func.accept(map)
             }
-            func.accept(map)
+        }
+        if (cell is SQLitePageHeader.CellWithPageReference) {
+            val page = db.getPage(cell.leftChildPage)
+            page.cells.forEachCell(db, table, func)
         }
     }
 }

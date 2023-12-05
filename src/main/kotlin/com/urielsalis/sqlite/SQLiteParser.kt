@@ -58,7 +58,14 @@ private fun parseSchema(
     val indexes = mutableListOf<SQLiteIndex>()
     val triggers = mutableListOf<SQLiteTrigger>()
     val views = mutableListOf<SQLiteView>()
-    val records = page.cells.map { parseRecord(textEncoding, it) }
+    val records =
+        page.cells.mapNotNull {
+            if (it is SQLitePageHeader.CellWithPayload) {
+                parseRecord(textEncoding, it)
+            } else {
+                null
+            }
+        }
     for (record in records) {
         for (row in record.values) {
             val type = row[0]
@@ -116,7 +123,7 @@ private fun parseSchema(
         }
     }
     return SQLiteSchema(
-        pageBuffer.limit() - page.header.cellContentAreaOffset.toInt() - HEADER_SIZE,
+        pageBuffer.limit() - page.header.cellContentAreaOffset - HEADER_SIZE,
         tables,
         indexes,
         triggers,
@@ -126,14 +133,12 @@ private fun parseSchema(
 
 fun parseRecord(
     textEncoding: SQLiteHeader.TextEncoding,
-    cell: SQLitePageHeader.Cell,
+    cell: SQLitePageHeader.CellWithPayload,
 ): SQLiteRecord =
-    when (cell) {
-        is SQLitePageHeader.InteriorIndexCell -> TODO("Follow pages")
-        is SQLitePageHeader.InteriorTableCell -> TODO("Follow pages")
-        is SQLitePageHeader.LeafIndexCell -> SQLiteRecord(-1L, parseRecordContent(textEncoding, cell.payload))
-        is SQLitePageHeader.LeafTableCell -> SQLiteRecord(cell.rowId, parseRecordContent(textEncoding, cell.payload))
-    }
+    SQLiteRecord(
+        if (cell is SQLitePageHeader.CellWithRowId) cell.rowId else -1,
+        parseRecordContent(textEncoding, cell.payload),
+    )
 
 private fun parseRecordContent(
     textEncoding: SQLiteHeader.TextEncoding,
@@ -216,17 +221,24 @@ private fun parseRecordColumns(
 }
 
 private fun parsePage(buffer: ByteBuffer): SQLitePage {
-    val header = parsePageHeader(buffer)
-    val cellOffsets = mutableListOf<Short>()
-    for (i in 0 until header.numberOfCells) {
-        cellOffsets.add(buffer.getShort())
+    try {
+        val header = parsePageHeader(buffer)
+        val cellOffsets = mutableListOf<Short>()
+        for (i in 0 until header.numberOfCells) {
+            cellOffsets.add(buffer.getShort())
+        }
+        val cells = mutableListOf<SQLitePageHeader.Cell>()
+        cellOffsets.sorted().forEach {
+            buffer.position(it.toInt())
+            cells.add(header.pageType.parseCell(buffer))
+        }
+        return SQLitePage(header, cells)
+    } catch (e: IllegalStateException) {
+        return SQLitePage(
+            SQLitePageHeader(SQLitePageHeader.InvalidPageType, 0, 0, 0, 0, 0),
+            mutableListOf(),
+        )
     }
-    val cells = mutableListOf<SQLitePageHeader.Cell>()
-    cellOffsets.sorted().forEach {
-        buffer.position(it.toInt())
-        cells.add(header.pageType.parseCell(buffer))
-    }
-    return SQLitePage(header, cells)
 }
 
 fun parsePageHeader(buffer: ByteBuffer): SQLitePageHeader {
